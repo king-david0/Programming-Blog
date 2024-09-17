@@ -1,0 +1,15 @@
+<div class="form-container">
+   <form id="form" action="/submit-post" method="POST" enctype="multipart/form-data">
+      <textarea type="text" id="postContent" name="postContent" placeholder="Blog?"  oninput="autoResize(this)"></textarea>
+
+      <input type="file" id="imageUpload" name="imageUpload" accept="image/*" style="display: none;">
+      
+      <!-- Hidden field to pass the selected category -->
+      <input type="hidden" id="category" name="category" value ="<%= category %>">
+
+      <button type="button" id="customUploadButton"><img src="/images/image-solid.svg" style="height: 25px;" alt=""></button>
+      <button type="submit"><img src="/images/paper-plane-solid.svg" style="height: 25px;"></button>
+   </form>
+</div>
+
+

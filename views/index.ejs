@@ -1,0 +1,154 @@
+<%- include("partials/header.ejs") %>
+<div class="body-container">
+  <%- include('partials/sidebar.ejs') %>
+  <article class="content">
+    <% content.forEach((item) => { %>
+      <section class="<%= item.isUserPost ? 'user-post' : 'section' %>" data-id="<%= item.id %>">
+      <div class="post-profile">
+        <img src="<%= item.profileImage %>" alt="" />
+        <p><%= item.username %></p>
+      </div>
+      <div class="post-content">
+        <% if (item.postImage) { %>
+        <img src="<%= item.postImage %>" alt="" />
+        <% } %>
+        <p class="post-text"><%= item.postText %></p>
+        <% if (item.isUserPost&& category) { %>
+        <form action="/comment_changeFile" id="commentForm">
+          <button type="button" class="update-button" data-id="<%= item.id %>">
+            <img src="/images/marker-solid.svg" style="height: 20px; width: 20px" />
+          </button>
+          <button type="button" class="delete-button" data-id="<%= item.id %>">
+            <img src="/images/trash-solid.svg" style="height: 17px; width: 20px" />
+          </button>
+        </form>
+        <% } else if(category) { %>
+        <form action="/comment_changeFile" id="commentForm">
+          <input id="comment" type="text" placeholder="comment" />
+          <button type="button" class="comment-button">
+            <img
+              src="/images/comment-solid.svg"
+              style="height: 20px; width: 20px"
+            />
+          </button>
+        </form>
+        <% } %>
+        <hr>
+      </div>
+    </section>
+    <% }); %> <% if (showPostForm) { %> <%- include('partials/post-form.ejs') %>
+    <% } %>
+  </article>
+</div>
+<% if (category) { %>
+  <meta name="category" content="<%= category %>">
+<% } %>
+
+<% if (showPostForm) { %>
+  <script>
+      function autoResize(textarea) {
+    textarea.style.height = 'auto';
+    textarea.style.height = (textarea.scrollHeight) + 'px'; 
+  }
+    document
+      .getElementById("customUploadButton")
+      .addEventListener("click", function () {
+        document.getElementById("imageUpload").click();
+      });
+  
+    document.getElementById("form").addEventListener("submit", function (e) {
+      const postContent = document.getElementById("postContent").value.trim();
+      if (!postContent) {
+        e.preventDefault();
+        alert("Post content cannot be empty!");
+      }
+    });
+    // console.log('Category:', document.querySelector('meta[name="category"]').getAttribute('content'));
+
+    document.querySelectorAll(".delete-button").forEach(button => {
+  button.addEventListener("click", (e) => {
+    const postId = e.target.closest('button').dataset.id;
+    const category = document.querySelector('meta[name="category"]').getAttribute('content');
+
+    fetch(`/delete-post/${category}/${postId}`, {
+      method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        e.target.closest('section').remove();
+      } else {
+        alert('Failed to delete post');
+      }
+    });
+  });
+});
+
+
+document.querySelectorAll(".update-button").forEach(button => {
+  button.addEventListener("click", (e) => {
+    const postSection = e.target.closest('section');
+    const postId = postSection.querySelector('.update-button').dataset.id;
+    const category = document.querySelector('meta[name="category"]').getAttribute('content');
+    const postTextElement = postSection.querySelector('.post-text');
+
+    if (!postTextElement) {
+      console.error("Post text element not found.");
+      return;
+    }
+    if (postSection.querySelector('.post-edit-textarea')) {
+      return;
+    }
+
+    const textarea = document.createElement('textarea');
+    textarea.classList.add('post-edit-textarea');
+    textarea.value = postTextElement.textContent;
+
+
+    postTextElement.parentNode.replaceChild(textarea, postTextElement);
+    textarea.focus();
+
+    textarea.addEventListener('blur', function () {
+      const newText = textarea.value.trim();
+
+      if (newText === postTextElement.textContent) {
+        textarea.parentNode.replaceChild(postTextElement, textarea);
+        return;
+      }
+
+      fetch(`/update-post/${category}/${postId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ newText })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          postTextElement.textContent = data.post.postText;
+
+          textarea.parentNode.replaceChild(postTextElement, textarea);
+        } else {
+          alert('Failed to update post');
+          textarea.parentNode.replaceChild(postTextElement, textarea);
+        }
+      })
+      .catch(() => {
+        alert('Error updating post');
+        textarea.parentNode.replaceChild(postTextElement, textarea);
+      });
+    });
+
+    textarea.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        textarea.blur();
+      }
+    });
+  });
+});
+
+  </script>
+  <% } %>
+  
